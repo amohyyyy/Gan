@@ -1,48 +1,66 @@
-import { useState } from "react";
-import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "../../lib/firebase";
-import { useRouter } from "next/router";
-import Link from "next/link";
-import Header from "../../components/Header";
+import React, { useState } from "react";
+import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
+import { useNavigate } from "react-router-dom";
+import app from "../firebaseConfig"; // استدعاء الإعدادات الخاصة بـ Firebase
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const router = useRouter();
+  const navigate = useNavigate();
+  const auth = getAuth(app);
 
-  async function handleLogin(e) {
+  const handleLogin = async (e) => {
     e.preventDefault();
+    setLoading(true);
     setError("");
+
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      router.replace("/dashboard");
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      console.log("تم تسجيل الدخول:", userCredential.user);
+      navigate("/dashboard"); // تحويل المستخدم للوحة التحكم
     } catch (err) {
-      setError(err.message || "خطأ في تسجيل الدخول");
+      console.error("خطأ أثناء تسجيل الدخول:", err.message);
+      setError("البريد الإلكتروني أو كلمة المرور غير صحيحة");
+    } finally {
+      setLoading(false);
     }
-  }
+  };
 
   return (
-    <>
-      <Header />
-      <div className="container py-12">
-        <div className="card max-w-md mx-auto">
-          <h1 className="text-2xl font-bold mb-4 text-center">تسجيل دخول</h1>
-          <form onSubmit={handleLogin} className="space-y-3">
-            <div>
-              <label className="small block mb-1">البريد الإلكتروني</label>
-              <input className="input" type="email" value={email} onChange={e=>setEmail(e.target.value)} required />
-            </div>
-            <div>
-              <label className="small block mb-1">كلمة المرور</label>
-              <input className="input" type="password" value={password} onChange={e=>setPassword(e.target.value)} required />
-            </div>
-            {error && <p className="text-red-600 small">{error}</p>}
-            <button className="btn btn-primary w-full" type="submit">دخول</button>
-          </form>
-          <p className="text-center mt-4 small">إنشاء حساب جديد؟ <Link href="/auth/signup"><a className="text-blue-600">اضغط هنا</a></Link></p>
+    <div style={{ maxWidth: "400px", margin: "50px auto", padding: "20px", border: "1px solid #ccc", borderRadius: "10px" }}>
+      <h2>تسجيل الدخول</h2>
+      <form onSubmit={handleLogin}>
+        <div>
+          <label>البريد الإلكتروني:</label>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            style={{ width: "100%", padding: "8px", margin: "5px 0" }}
+          />
         </div>
-      </div>
-    </>
+        <div>
+          <label>كلمة المرور:</label>
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            style={{ width: "100%", padding: "8px", margin: "5px 0" }}
+          />
+        </div>
+        {error && <p style={{ color: "red" }}>{error}</p>}
+        <button
+          type="submit"
+          disabled={loading}
+          style={{ width: "100%", padding: "10px", background: "#007BFF", color: "white", border: "none", borderRadius: "5px" }}
+        >
+          {loading ? "جاري التحقق..." : "تسجيل الدخول"}
+        </button>
+      </form>
+    </div>
   );
-    }
+          }
